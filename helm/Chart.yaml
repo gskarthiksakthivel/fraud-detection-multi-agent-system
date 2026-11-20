@@ -1,0 +1,15 @@
+apiVersion: v2
+name: fraud-agentic-ai
+description: Multi-agent fraud detection system — LangGraph + MCP on AKS
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - agentic-ai
+  - fraud-detection
+  - langgraph
+  - mcp
+  - fastapi
+maintainers:
+  - name: Karthikeyan Sakthivel
+    email: gskarthiksakthivel@gmail.com

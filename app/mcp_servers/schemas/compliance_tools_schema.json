@@ -1,0 +1,119 @@
+{
+  "mcp_server": "Compliance MCP Server",
+  "version": "1.0.0",
+  "base_url": "http://compliance-mcp:8003",
+  "description": "Compliance, KYC, AML, sanctions and GDPR tools for regulated banking",
+  "tools": [
+    {
+      "name": "kyc_status",
+      "description": "Check KYC verification status for an account holder",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "account_id": { "type": "string" }
+        },
+        "required": ["account_id"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "kyc_status": { "type": "string", "enum": ["VERIFIED", "PENDING", "FAILED", "EXPIRED"] },
+          "kyc_tier": { "type": "string", "enum": ["BASIC", "ENHANCED", "FULL"] },
+          "outstanding_requirements": { "type": "array", "items": { "type": "string" } },
+          "enhanced_due_diligence": { "type": "boolean" }
+        }
+      }
+    },
+    {
+      "name": "sanctions_check",
+      "description": "Screen against OFAC, EU, UN and national sanctions lists",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "account_id": { "type": "string" },
+          "merchant": { "type": "string" },
+          "country": { "type": "string" }
+        },
+        "required": ["account_id", "merchant", "country"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "sanctions_hit": { "type": "boolean" },
+          "matched_list": { "type": "string" },
+          "match_confidence": { "type": "number" },
+          "lists_checked": { "type": "array" },
+          "requires_immediate_block": { "type": "boolean" }
+        }
+      }
+    },
+    {
+      "name": "aml_screening",
+      "description": "AML screening — detect money laundering typologies",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "account_id": { "type": "string" },
+          "amount": { "type": "number" },
+          "merchant_category": { "type": "string" }
+        },
+        "required": ["account_id", "amount", "merchant_category"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "aml_flagged": { "type": "boolean" },
+          "typologies_detected": { "type": "array", "items": { "type": "string" } },
+          "risk_score": { "type": "number" },
+          "reporting_threshold_breach": { "type": "boolean" }
+        }
+      }
+    },
+    {
+      "name": "gdpr_audit_log",
+      "description": "Write a GDPR-compliant audit log entry for data processing",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "transaction_id": { "type": "string" },
+          "account_id": { "type": "string" },
+          "checks_performed": { "type": "array", "items": { "type": "string" } },
+          "outcome": { "type": "string" }
+        },
+        "required": ["transaction_id", "account_id", "checks_performed", "outcome"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "audit_id": { "type": "string" },
+          "legal_basis": { "type": "string" },
+          "retention_period_days": { "type": "integer" },
+          "logged_at": { "type": "string" }
+        }
+      }
+    },
+    {
+      "name": "generate_sar_report",
+      "description": "Generate a Suspicious Activity Report for regulatory filing to FIU-NL",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "transaction_id": { "type": "string" },
+          "account_id": { "type": "string" },
+          "suspicious_activity_description": { "type": "string" },
+          "aml_typologies": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["transaction_id", "account_id", "suspicious_activity_description", "aml_typologies"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "sar_id": { "type": "string" },
+          "status": { "type": "string", "enum": ["DRAFT", "SUBMITTED", "ACKNOWLEDGED"] },
+          "requires_human_review": { "type": "boolean" },
+          "filing_authority": { "type": "string" }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+---
+# Banking MCP Server
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-banking-mcp
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.mcpServers.banking.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-banking-mcp
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-banking-mcp
+    spec:
+      containers:
+        - name: banking-mcp
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          command: ["python", "app/mcp_servers/banking_mcp_server.py"]
+          ports:
+            - containerPort: {{ .Values.mcpServers.banking.port }}
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+# Compliance MCP Server
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-compliance-mcp
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.mcpServers.compliance.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-compliance-mcp
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-compliance-mcp
+    spec:
+      containers:
+        - name: compliance-mcp
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          command: ["python", "app/mcp_servers/compliance_mcp_server.py"]
+          ports:
+            - containerPort: {{ .Values.mcpServers.compliance.port }}
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

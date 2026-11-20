@@ -1,0 +1,251 @@
+openapi: 3.1.0
+info:
+  title: Fraud Agentic AI System
+  version: 1.0.0
+  description: |
+    Multi-agent fraud detection API powered by LangGraph + MCP.
+    6 agents: Supervisor, Fraud, Compliance, Risk, Investigation, Escalation.
+    2 MCP Servers: Banking (port 8002), Compliance (port 8003).
+  contact:
+    name: Karthikeyan Sakthivel
+    email: gskarthiksakthivel@gmail.com
+
+servers:
+  - url: http://localhost:8000
+    description: Local development
+  - url: https://fraud-ai.yourdomain.com
+    description: Production (AKS)
+
+security:
+  - BearerAuth: []
+
+paths:
+  /api/v1/analyse:
+    post:
+      summary: Analyse a transaction
+      description: |
+        Run a transaction through the full multi-agent pipeline.
+        Agents: supervisor → fraud → compliance → risk → investigation → escalation.
+      operationId: analyseTransaction
+      tags: [Analysis]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+            example:
+              account_id: "ACC-001"
+              amount: 4999.99
+              currency: "EUR"
+              merchant: "CryptoExchange XYZ"
+              merchant_category: "CRYPTO"
+              country: "RU"
+              ip_address: "185.220.101.1"
+      responses:
+        '200':
+          description: Analysis complete
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisResponse'
+        '400':
+          description: Input rejected by guardrails (PII or prompt injection detected)
+        '401':
+          description: Invalid or expired JWT token
+        '429':
+          description: Rate limit exceeded
+        '500':
+          description: Agent pipeline error
+
+  /api/v1/analyse/stream:
+    post:
+      summary: Analyse with SSE streaming
+      description: |
+        Streams agent progress events via Server-Sent Events.
+        Each agent completion emits an event with partial results.
+      operationId: analyseTransactionStream
+      tags: [Analysis]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+      responses:
+        '200':
+          description: SSE stream of agent events
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                example: |
+                  data: {"event": "agent_completed", "agent": "fraud_agent", "fraud_score": 0.87}
+
+  /api/v1/escalate:
+    post:
+      summary: Manual escalation trigger
+      operationId: manualEscalate
+      tags: [Escalation]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EscalationRequest'
+      responses:
+        '200':
+          description: Escalation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EscalationResponse'
+
+  /api/v1/session/{session_id}:
+    get:
+      summary: Get cached session state
+      operationId: getSession
+      tags: [Session]
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Session state from Redis
+        '404':
+          description: Session not found or expired
+
+  /health:
+    get:
+      summary: Health check
+      operationId: healthCheck
+      tags: [Ops]
+      security: []
+      responses:
+        '200':
+          description: Service health status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    TransactionRequest:
+      type: object
+      required: [account_id, amount, merchant]
+      properties:
+        transaction_id:
+          type: string
+          format: uuid
+        account_id:
+          type: string
+        amount:
+          type: number
+          minimum: 0
+        currency:
+          type: string
+          default: EUR
+        merchant:
+          type: string
+        merchant_category:
+          type: string
+        country:
+          type: string
+        ip_address:
+          type: string
+        session_id:
+          type: string
+
+    AnalysisResponse:
+      type: object
+      properties:
+        transaction_id:
+          type: string
+        session_id:
+          type: string
+        risk_level:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+        fraud_score:
+          type: number
+          minimum: 0
+          maximum: 1
+        escalation_status:
+          type: string
+          enum: [PENDING, ESCALATED, RESOLVED, AUTO_BLOCKED]
+        agent_decisions:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentDecision'
+        summary:
+          type: string
+        audit_trail_id:
+          type: string
+        processing_time_ms:
+          type: number
+
+    AgentDecision:
+      type: object
+      properties:
+        agent_name:
+          type: string
+        decision:
+          type: string
+        confidence:
+          type: number
+        reasoning:
+          type: string
+        tools_called:
+          type: array
+          items:
+            type: string
+
+    EscalationRequest:
+      type: object
+      required: [transaction_id, reason, agent_name, risk_level]
+      properties:
+        transaction_id:
+          type: string
+        reason:
+          type: string
+        agent_name:
+          type: string
+        risk_level:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+
+    EscalationResponse:
+      type: object
+      properties:
+        escalation_id:
+          type: string
+        transaction_id:
+          type: string
+        status:
+          type: string
+        assigned_to:
+          type: string
+        message:
+          type: string
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        version:
+          type: string
+        environment:
+          type: string
+        services:
+          type: object

@@ -1,0 +1,116 @@
+name: CD — Deploy to AKS via Helm
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        required: true
+        default: staging
+        type: choice
+        options: [staging, production]
+
+env:
+  IMAGE_NAME: fraud-agentic-ai
+  HELM_CHART: ./helm
+  NAMESPACE: fraud-ai
+
+jobs:
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    environment: staging
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials \
+            --resource-group ${{ secrets.AKS_RESOURCE_GROUP }} \
+            --name ${{ secrets.AKS_CLUSTER_NAME }} \
+            --overwrite-existing
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: "3.14.0"
+
+      - name: Helm upgrade — Staging
+        run: |
+          helm upgrade --install fraud-agentic-ai ${{ env.HELM_CHART }} \
+            --namespace ${{ env.NAMESPACE }} \
+            --create-namespace \
+            --set image.repository=${{ secrets.ACR_REGISTRY }}/${{ env.IMAGE_NAME }} \
+            --set image.tag=${{ github.sha }} \
+            --set environment=staging \
+            --set replicaCount=2 \
+            --set env.OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
+            --set env.LANGCHAIN_API_KEY=${{ secrets.LANGCHAIN_API_KEY }} \
+            --set env.REDIS_URL=${{ secrets.STAGING_REDIS_URL }} \
+            --timeout 5m \
+            --wait
+
+      - name: Post-deploy smoke test
+        run: |
+          ENDPOINT=$(kubectl get svc fraud-agentic-ai -n ${{ env.NAMESPACE }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          sleep 10
+          curl --fail http://$ENDPOINT/health
+          echo "✅ Staging deployment healthy"
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    environment: production
+    needs: deploy-staging
+    if: github.event.inputs.environment == 'production' || github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials \
+            --resource-group ${{ secrets.AKS_RESOURCE_GROUP_PROD }} \
+            --name ${{ secrets.AKS_CLUSTER_NAME_PROD }}
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: "3.14.0"
+
+      - name: Helm upgrade — Production (blue-green)
+        run: |
+          helm upgrade --install fraud-agentic-ai ${{ env.HELM_CHART }} \
+            --namespace ${{ env.NAMESPACE }} \
+            --create-namespace \
+            --set image.repository=${{ secrets.ACR_REGISTRY }}/${{ env.IMAGE_NAME }} \
+            --set image.tag=${{ github.sha }} \
+            --set environment=production \
+            --set replicaCount=3 \
+            --set resources.requests.memory=512Mi \
+            --set resources.limits.memory=1Gi \
+            --set env.OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY_PROD }} \
+            --set env.LANGCHAIN_API_KEY=${{ secrets.LANGCHAIN_API_KEY_PROD }} \
+            --set env.REDIS_URL=${{ secrets.PROD_REDIS_URL }} \
+            --timeout 10m \
+            --wait \
+            --atomic
+
+      - name: Notify deployment
+        if: always()
+        run: |
+          echo "🚀 Production deployment: ${{ job.status }} | SHA: ${{ github.sha }}"

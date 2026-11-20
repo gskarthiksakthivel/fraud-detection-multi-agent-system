@@ -1,0 +1,109 @@
+{
+  "version": "1.0",
+  "description": "A2A Agent Cards for fraud-agentic-ai — defines each agent's capabilities, inputs, outputs for inter-agent discovery",
+  "agents": [
+    {
+      "agent_id": "supervisor",
+      "name": "Supervisor Agent",
+      "description": "Orchestrator — routes transactions to specialist agents using LangGraph supervisor pattern",
+      "capabilities": ["routing", "task_delegation", "priority_assessment"],
+      "accepts": {
+        "transaction_data": "dict",
+        "session_id": "string"
+      },
+      "produces": {
+        "next_agent": "string",
+        "routing_reason": "string",
+        "priority": "integer"
+      },
+      "protocol": "A2A_TASK_DELEGATION"
+    },
+    {
+      "agent_id": "fraud_agent",
+      "name": "Fraud Detection Agent",
+      "description": "Scores transaction fraud risk using Banking MCP tools and LLM reasoning",
+      "capabilities": ["fraud_scoring", "anomaly_detection", "velocity_check", "mcp_tool_calling"],
+      "mcp_server": "banking_mcp",
+      "tools_used": ["get_transaction_history", "check_velocity", "flag_transaction"],
+      "accepts": {
+        "transaction_data": "dict",
+        "session_id": "string"
+      },
+      "produces": {
+        "fraud_output": "FraudAgentOutput",
+        "final_fraud_score": "float"
+      },
+      "output_schema": "FraudAgentOutput",
+      "protocol": "LANGGRAPH_NODE"
+    },
+    {
+      "agent_id": "compliance_agent",
+      "name": "Compliance Agent",
+      "description": "KYC, AML, sanctions checks via Compliance MCP. Flags SAR requirements.",
+      "capabilities": ["kyc_check", "aml_screening", "sanctions_screening", "gdpr_audit", "sar_generation"],
+      "mcp_server": "compliance_mcp",
+      "tools_used": ["kyc_status", "sanctions_check", "aml_screening", "gdpr_audit_log"],
+      "accepts": {
+        "transaction_data": "dict",
+        "session_id": "string"
+      },
+      "produces": {
+        "compliance_output": "ComplianceAgentOutput"
+      },
+      "output_schema": "ComplianceAgentOutput",
+      "protocol": "LANGGRAPH_NODE"
+    },
+    {
+      "agent_id": "risk_agent",
+      "name": "Risk Scoring Agent",
+      "description": "Aggregates fraud and compliance results into unified risk score",
+      "capabilities": ["risk_aggregation", "risk_scoring", "severity_classification"],
+      "mcp_server": null,
+      "accepts": {
+        "fraud_output": "FraudAgentOutput",
+        "compliance_output": "ComplianceAgentOutput"
+      },
+      "produces": {
+        "risk_output": "RiskAgentOutput",
+        "final_risk_level": "RiskLevel"
+      },
+      "output_schema": "RiskAgentOutput",
+      "protocol": "LANGGRAPH_NODE"
+    },
+    {
+      "agent_id": "investigation_agent",
+      "name": "Investigation Agent",
+      "description": "RAG-powered case research — finds similar past fraud cases from ChromaDB",
+      "capabilities": ["rag_retrieval", "case_pattern_matching", "explainable_reports"],
+      "rag_collection": "fraud_cases",
+      "accepts": {
+        "transaction_data": "dict",
+        "fraud_output": "FraudAgentOutput"
+      },
+      "produces": {
+        "investigation_output": "InvestigationAgentOutput"
+      },
+      "output_schema": "InvestigationAgentOutput",
+      "protocol": "LANGGRAPH_NODE"
+    },
+    {
+      "agent_id": "escalation_agent",
+      "name": "Escalation Agent",
+      "description": "Terminal agent — final decision, auto-block, human escalation, audit trail",
+      "capabilities": ["final_decision", "auto_blocking", "human_handoff", "audit_trail"],
+      "accepts": {
+        "fraud_output": "FraudAgentOutput",
+        "compliance_output": "ComplianceAgentOutput",
+        "risk_output": "RiskAgentOutput",
+        "investigation_output": "InvestigationAgentOutput"
+      },
+      "produces": {
+        "escalation_output": "EscalationAgentOutput",
+        "escalation_status": "EscalationStatus",
+        "audit_trail_id": "string"
+      },
+      "output_schema": "EscalationAgentOutput",
+      "protocol": "LANGGRAPH_NODE"
+    }
+  ]
+}

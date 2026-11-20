@@ -1,0 +1,35 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    service: fraud-agentic-ai
+    environment: local
+
+scrape_configs:
+  # FastAPI app metrics (prometheus-fastapi-instrumentator)
+  - job_name: fraud-agentic-ai
+    static_configs:
+      - targets: [app:8000]
+    metrics_path: /metrics
+
+  # Banking MCP server
+  - job_name: banking-mcp
+    static_configs:
+      - targets: [banking-mcp:8002]
+    metrics_path: /metrics
+
+  # Compliance MCP server
+  - job_name: compliance-mcp
+    static_configs:
+      - targets: [compliance-mcp:8003]
+    metrics_path: /metrics
+
+  # Redis exporter
+  - job_name: redis
+    static_configs:
+      - targets: [redis-exporter:9121]
+
+  # Prometheus itself
+  - job_name: prometheus
+    static_configs:
+      - targets: [localhost:9090]

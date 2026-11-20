@@ -1,0 +1,134 @@
+{
+  "mcp_server": "Banking MCP Server",
+  "version": "1.0.0",
+  "base_url": "http://banking-mcp:8002",
+  "description": "Exposes core banking capabilities as MCP tools for fraud detection agents",
+  "tools": [
+    {
+      "name": "get_transaction_history",
+      "description": "Retrieve recent transaction history for an account",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "account_id": { "type": "string", "description": "Account identifier" },
+          "hours": { "type": "integer", "minimum": 1, "maximum": 168, "default": 24 }
+        },
+        "required": ["account_id"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "account_id": { "type": "string" },
+          "transaction_count": { "type": "integer" },
+          "window_hours": { "type": "integer" },
+          "transactions": { "type": "array" }
+        }
+      }
+    },
+    {
+      "name": "check_velocity",
+      "description": "Check transaction velocity (frequency) for an account in a time window",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "account_id": { "type": "string" },
+          "window_minutes": { "type": "integer", "minimum": 5, "maximum": 1440, "default": 60 }
+        },
+        "required": ["account_id"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "velocity_flag": { "type": "boolean" },
+          "transaction_count": { "type": "integer" },
+          "threshold": { "type": "integer" },
+          "status": { "type": "string", "enum": ["NORMAL", "VELOCITY_ABUSE"] }
+        }
+      }
+    },
+    {
+      "name": "flag_transaction",
+      "description": "Flag a transaction for fraud review in the core banking system",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "transaction_id": { "type": "string" },
+          "reason": { "type": "string" },
+          "score": { "type": "number", "minimum": 0, "maximum": 1 }
+        },
+        "required": ["transaction_id", "reason", "score"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "flagged": { "type": "boolean" },
+          "alert_id": { "type": "string" },
+          "status": { "type": "string" }
+        }
+      }
+    },
+    {
+      "name": "freeze_account",
+      "description": "Freeze an account — emergency action for CRITICAL fraud detections",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "account_id": { "type": "string" },
+          "reason": { "type": "string" },
+          "initiated_by": { "type": "string", "default": "fraud_agent" }
+        },
+        "required": ["account_id", "reason"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "frozen": { "type": "boolean" },
+          "freeze_id": { "type": "string" },
+          "notification_sent": { "type": "boolean" }
+        }
+      }
+    },
+    {
+      "name": "get_account_info",
+      "description": "Retrieve account metadata including customer tier and fraud history",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "account_id": { "type": "string" }
+        },
+        "required": ["account_id"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "customer_tier": { "type": "string" },
+          "account_age_days": { "type": "integer" },
+          "previous_fraud_flags": { "type": "integer" },
+          "kyc_tier": { "type": "string" }
+        }
+      }
+    },
+    {
+      "name": "get_risk_signals",
+      "description": "Get device and IP-based risk signals for a transaction",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "account_id": { "type": "string" },
+          "ip_address": { "type": "string" },
+          "device_fingerprint": { "type": "string" }
+        },
+        "required": ["account_id"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "is_tor_exit_node": { "type": "boolean" },
+          "geo_mismatch": { "type": "boolean" },
+          "device_known": { "type": "boolean" },
+          "ip_reputation": { "type": "string", "enum": ["GOOD", "NEUTRAL", "BAD"] }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+  namespace: {{ .Release.Namespace }}
+data:
+  ENVIRONMENT: {{ .Values.environment | quote }}
+  LANGCHAIN_TRACING_V2: {{ .Values.env.LANGCHAIN_TRACING_V2 | quote }}
+  LANGCHAIN_PROJECT: {{ .Values.env.LANGCHAIN_PROJECT | quote }}
+  REDIS_URL: {{ .Values.env.REDIS_URL | quote }}
+  CHROMA_HOST: {{ .Values.env.CHROMA_HOST | quote }}
+  CHROMA_PORT: {{ .Values.env.CHROMA_PORT | quote }}
+  BANKING_MCP_URL: {{ .Values.env.BANKING_MCP_URL | quote }}
+  COMPLIANCE_MCP_URL: {{ .Values.env.COMPLIANCE_MCP_URL | quote }}

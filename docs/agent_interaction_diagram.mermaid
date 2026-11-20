@@ -1,0 +1,35 @@
+flowchart TD
+    A[Transaction Request\nFastAPI POST /api/v1/analyse] --> B[SUPERVISOR AGENT\nLangGraph Entry Point]
+
+    B -->|Routes to first agent| C[FRAUD AGENT\nfraud_score 0-1]
+    B -->|fraud_score >= 0.9| G[ESCALATION AGENT\nTerminal]
+
+    C -->|Calls Banking MCP| MCP1[(Banking MCP Server\nport 8002\nget_history\ncheck_velocity\nflag_transaction)]
+    C -->|fraud_score < 0.9| D[COMPLIANCE AGENT\nKYC / AML / Sanctions]
+    C -->|fraud_score >= 0.9| G
+
+    D -->|Calls Compliance MCP| MCP2[(Compliance MCP Server\nport 8003\nkyc_status\nsanctions_check\naml_screening\ngdpr_audit_log)]
+    D --> E[RISK AGENT\nUnified Risk Score 0-100]
+
+    E -->|risk_score >= 60| F[INVESTIGATION AGENT\nRAG ChromaDB]
+    E -->|risk_score < 60| G
+
+    F -->|Queries| VDB[(ChromaDB\n20 Fraud Cases\nVector Embeddings)]
+    F --> G
+
+    G -->|Writes| AUDIT[(Audit Trail\nGDPR Compliant\n7yr Retention)]
+    G -->|Saves| REDIS[(Redis\nSession State\n1hr TTL)]
+    G --> H[AnalysisResponse\nrisk_level\nfraud_score\nescalation_status\naudit_trail_id]
+
+    style A fill:#4A90D9,color:#fff
+    style B fill:#7B68EE,color:#fff
+    style C fill:#E74C3C,color:#fff
+    style D fill:#F39C12,color:#fff
+    style E fill:#27AE60,color:#fff
+    style F fill:#16A085,color:#fff
+    style G fill:#8E44AD,color:#fff
+    style MCP1 fill:#2C3E50,color:#fff
+    style MCP2 fill:#2C3E50,color:#fff
+    style VDB fill:#1A252F,color:#fff
+    style AUDIT fill:#1A252F,color:#fff
+    style REDIS fill:#C0392B,color:#fff

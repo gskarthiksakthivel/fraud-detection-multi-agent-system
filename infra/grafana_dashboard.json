@@ -1,0 +1,123 @@
+{
+  "title": "Fraud Agentic AI — Agent Observability",
+  "uid": "fraud-agentic-ai-v1",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "10s",
+  "tags": ["fraud", "agentic-ai", "llm", "mcp"],
+  "panels": [
+    {
+      "id": 1,
+      "title": "API Request Rate (req/min)",
+      "type": "stat",
+      "gridPos": {"x": 0, "y": 0, "w": 6, "h": 4},
+      "targets": [{
+        "expr": "rate(http_requests_total{job='fraud-agentic-ai'}[1m]) * 60",
+        "legendFormat": "req/min"
+      }]
+    },
+    {
+      "id": 2,
+      "title": "API P95 Latency (ms)",
+      "type": "stat",
+      "gridPos": {"x": 6, "y": 0, "w": 6, "h": 4},
+      "targets": [{
+        "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job='fraud-agentic-ai'}[5m])) * 1000",
+        "legendFormat": "p95 ms"
+      }]
+    },
+    {
+      "id": 3,
+      "title": "Fraud Alerts per Minute",
+      "type": "stat",
+      "gridPos": {"x": 12, "y": 0, "w": 6, "h": 4},
+      "targets": [{
+        "expr": "rate(fraud_alerts_total[1m]) * 60",
+        "legendFormat": "alerts/min"
+      }]
+    },
+    {
+      "id": 4,
+      "title": "Auto-Block Rate",
+      "type": "stat",
+      "gridPos": {"x": 18, "y": 0, "w": 6, "h": 4},
+      "targets": [{
+        "expr": "rate(auto_blocks_total[1m]) * 60",
+        "legendFormat": "blocks/min"
+      }]
+    },
+    {
+      "id": 5,
+      "title": "Agent Execution Latency by Agent (ms)",
+      "type": "timeseries",
+      "gridPos": {"x": 0, "y": 4, "w": 24, "h": 8},
+      "targets": [
+        {"expr": "agent_latency_ms{agent='fraud_agent'}", "legendFormat": "Fraud Agent"},
+        {"expr": "agent_latency_ms{agent='compliance_agent'}", "legendFormat": "Compliance Agent"},
+        {"expr": "agent_latency_ms{agent='risk_agent'}", "legendFormat": "Risk Agent"},
+        {"expr": "agent_latency_ms{agent='investigation_agent'}", "legendFormat": "Investigation Agent"},
+        {"expr": "agent_latency_ms{agent='escalation_agent'}", "legendFormat": "Escalation Agent"}
+      ]
+    },
+    {
+      "id": 6,
+      "title": "MCP Tool Call Latency (ms)",
+      "type": "timeseries",
+      "gridPos": {"x": 0, "y": 12, "w": 12, "h": 8},
+      "targets": [
+        {"expr": "mcp_tool_latency_ms{server='banking_mcp'}", "legendFormat": "Banking MCP"},
+        {"expr": "mcp_tool_latency_ms{server='compliance_mcp'}", "legendFormat": "Compliance MCP"}
+      ]
+    },
+    {
+      "id": 7,
+      "title": "LLM Token Usage (tokens/min)",
+      "type": "timeseries",
+      "gridPos": {"x": 12, "y": 12, "w": 12, "h": 8},
+      "targets": [
+        {"expr": "rate(llm_prompt_tokens_total[1m]) * 60", "legendFormat": "Prompt Tokens"},
+        {"expr": "rate(llm_completion_tokens_total[1m]) * 60", "legendFormat": "Completion Tokens"}
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Risk Level Distribution",
+      "type": "piechart",
+      "gridPos": {"x": 0, "y": 20, "w": 8, "h": 8},
+      "targets": [{
+        "expr": "risk_level_total",
+        "legendFormat": "{{level}}"
+      }]
+    },
+    {
+      "id": 9,
+      "title": "Escalation Status Distribution",
+      "type": "piechart",
+      "gridPos": {"x": 8, "y": 20, "w": 8, "h": 8},
+      "targets": [{
+        "expr": "escalation_status_total",
+        "legendFormat": "{{status}}"
+      }]
+    },
+    {
+      "id": 10,
+      "title": "Redis Session Count",
+      "type": "stat",
+      "gridPos": {"x": 16, "y": 20, "w": 8, "h": 4},
+      "targets": [{
+        "expr": "redis_keyspace_keys",
+        "legendFormat": "active sessions"
+      }]
+    },
+    {
+      "id": 11,
+      "title": "Estimated LLM Cost (USD/hour)",
+      "type": "stat",
+      "gridPos": {"x": 16, "y": 24, "w": 8, "h": 4},
+      "targets": [{
+        "expr": "rate(llm_cost_usd_total[1h]) * 3600",
+        "legendFormat": "$/hour"
+      }]
+    }
+  ]
+}

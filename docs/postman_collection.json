@@ -1,0 +1,82 @@
+{
+  "info": {
+    "name": "Fraud Agentic AI",
+    "description": "Multi-agent fraud detection API — LangGraph + MCP",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8000" },
+    { "key": "token", "value": "your-jwt-token-here" }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      }
+    },
+    {
+      "name": "Analyse — Low Risk",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/analyse",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"account_id\": \"ACC-001\", \"amount\": 45.50, \"currency\": \"EUR\", \"merchant\": \"Albert Heijn\", \"merchant_category\": \"GROCERY\", \"country\": \"NL\"}"
+        }
+      }
+    },
+    {
+      "name": "Analyse — High Risk Crypto",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/analyse",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"account_id\": \"ACC-002\", \"amount\": 4999.99, \"currency\": \"EUR\", \"merchant\": \"CryptoExchange XYZ\", \"merchant_category\": \"CRYPTO\", \"country\": \"RU\", \"ip_address\": \"185.220.101.1\"}"
+        }
+      }
+    },
+    {
+      "name": "Analyse — Stream (SSE)",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/analyse/stream",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Accept", "value": "text/event-stream" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"account_id\": \"ACC-003\", \"amount\": 750.00, \"currency\": \"EUR\", \"merchant\": \"Shell\", \"merchant_category\": \"FUEL\", \"country\": \"NL\"}"
+        }
+      }
+    },
+    {
+      "name": "Manual Escalation",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/escalate",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"transaction_id\": \"TX-12345\", \"reason\": \"Disputed transaction\", \"agent_name\": \"fraud_agent\", \"risk_level\": \"HIGH\"}"
+        }
+      }
+    }
+  ]
+}
